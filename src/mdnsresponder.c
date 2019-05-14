@@ -1,6 +1,6 @@
 /*
  * Basic multicast DNS responder
- * 
+ *
  * Advertises the IP address, port, and characteristics of a service to other
  * devices using multicast DNS on the same LAN, so they can find devices with
  * addresses dynamically allocated by DHCP. See avahi, Bonjour, etc. See
@@ -132,7 +132,7 @@ static const ip_addr_t gMulticastV4Addr = DNS_MQUERY_IPV4_GROUP_INIT;
 #include "lwip/mld6.h"
 static const ip_addr_t gMulticastV6Addr = DNS_MQUERY_IPV6_GROUP_INIT;
 #endif
-static SemaphoreHandle_t gDictMutex = NULL;
+SemaphoreHandle_t gDictMutex = NULL;
 static mdns_rsrc*      gDictP = NULL;       // RR database, linked list
 
 //---------------------- Debug/logging utilities -------------------------
@@ -145,7 +145,7 @@ static mdns_rsrc*      gDictP = NULL;       // RR database, linked list
     #define DNS_RRTYPE_TSIG           250   /* Transaction Signature */
     #define DNS_RRTYPE_ANY            255   /* Not a DNS type, but a DNS query type, meaning "all types"*/
 
-    // DNS field CLASS used for "Resource Records" 
+    // DNS field CLASS used for "Resource Records"
     #define DNS_RRCLASS_ANY           255  /* Any class (q) */
 
     #define DNS_FLAG1_RESP            0x80
@@ -287,7 +287,7 @@ static mdns_rsrc*      gDictP = NULL;       // RR database, linked list
             rrlen = htons(ans.len);
             rrClass = htons(ans.class);
             printf(" %s %s TTL %d ", mdns_qrtype(atype), mdns_qclass(rrClass & 0x7FFF), htonl(ans.ttl));
-            if (rrClass & 0x8000) 
+            if (rrClass & 0x8000)
                 printf("cache-flush ");
             if (rrlen > 0) {
                 u8_t* rp = p + SIZEOF_DNS_ANSWER;
@@ -710,7 +710,7 @@ static void mdns_send_mcast(const ip_addr_t *addr, u8_t* msgP, int nBytes)
         printf(">>> mdns_send: alloc failed[%d]\n", nBytes);
     }
 }
-    
+
 // Message has passed tests, may want to send an answer
 static void mdns_reply(const ip_addr_t *addr, struct mdns_hdr* hdrP)
 {
