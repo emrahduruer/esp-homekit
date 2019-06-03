@@ -325,7 +325,7 @@ client_context_t *client_context_new() {
     c->server = NULL;
     c->endpoint_params = NULL;
 
-    c->data_size = 1024 + 18;
+    c->data_size = 256 + 18;
     c->data_available = 0;
     c->data = malloc(c->data_size);
 
