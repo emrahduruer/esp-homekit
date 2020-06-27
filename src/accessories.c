@@ -40,8 +40,16 @@ bool homekit_value_equal(homekit_value_t *a, homekit_value_t *b) {
             return (!ta && !tb);
         }
         case homekit_format_data:
-            // TODO: implement comparison
-            return false;
+            if (!a->data_value && !b->data_value)
+                return true;
+
+            if (!a->data_value || !b->data_value)
+                return false;
+
+            if (a->data_size != b->data_size)
+                return false;
+
+            return !memcmp(a->data_value, b->data_value, a->data_size);
     }
 
     return false;
@@ -89,7 +97,15 @@ void homekit_value_copy(homekit_value_t *dst, homekit_value_t *src) {
                 break;
             }
             case homekit_format_data:
-                // TODO:
+                if (src->is_static) {
+                    dst->data_value = src->data_value;
+                    dst->data_size = src->data_size;
+                    dst->is_static = true;
+                } else {
+                    dst->data_size = src->data_size;
+                    dst->data_value = malloc(src->data_size);
+                    memcpy(dst->data_value, src->data_value, src->data_size);
+                }
                 break;
             default:
                 // unknown format
@@ -117,7 +133,8 @@ void homekit_value_destruct(homekit_value_t *value) {
                     tlv_free(value->tlv_values);
                 break;
             case homekit_format_data:
-                // TODO:
+                if (!value->is_static && value->data_value)
+                    free(value->data_value);
                 break;
             default:
                 // unknown format
@@ -168,6 +185,13 @@ homekit_characteristic_t* homekit_characteristic_clone(homekit_characteristic_t*
         size += align_size(sizeof(uint8_t) * ch->valid_values.count);
     if (ch->valid_values_ranges.count)
         size += align_size(sizeof(homekit_valid_values_range_t) * ch->valid_values_ranges.count);
+    if (ch->callback) {
+        homekit_characteristic_change_callback_t *c = ch->callback;
+        while (c) {
+            size += align_size(sizeof(homekit_characteristic_change_callback_t));
+            c = c->next;
+        }
+    }
 
     uint8_t* p = calloc(1, size);
 
@@ -243,9 +267,28 @@ homekit_characteristic_t* homekit_characteristic_clone(homekit_characteristic_t*
         p += align_size(sizeof(homekit_valid_values_range_t*) * c);
     }
 
+    if (ch->callback) {
+        int c = 1;
+        homekit_characteristic_change_callback_t *callback_in = ch->callback;
+        clone->callback = (homekit_characteristic_change_callback_t*)p;
+
+        homekit_characteristic_change_callback_t *callback_out = clone->callback;
+        memcpy(callback_out, callback_in, sizeof(*callback_out));
+
+        while (callback_in->next) {
+            callback_in = callback_in->next;
+            callback_out->next = callback_out + 1;
+            callback_out = callback_out->next;
+            memcpy(callback_out, callback_in, sizeof(*callback_out));
+            c++;
+        }
+        callback_out->next = NULL;
+
+        p += align_size(sizeof(homekit_characteristic_change_callback_t)) * c;
+    }
+
     clone->getter = ch->getter;
     clone->setter = ch->setter;
-    clone->callback = ch->callback;
     clone->getter_ex = ch->getter_ex;
     clone->setter_ex = ch->setter_ex;
     clone->context = ch->context;

@@ -328,33 +328,45 @@ int crypto_chacha20poly1305_encrypt(
 }
 
 
+int crypto_ed25519_init(ed25519_key *key) {
+    int r = wc_ed25519_init(key);
+    if (r) {
+        return r;
+    }
+    return 0;
+}
+
+
 ed25519_key *crypto_ed25519_new() {
     ed25519_key *key = malloc(sizeof(ed25519_key));
-    int r = wc_ed25519_init(key);
+    int r = crypto_ed25519_init(key);
     if (r) {
         free(key);
         return NULL;
     }
     return key;
 }
+
 
 void crypto_ed25519_free(ed25519_key *key) {
     if (key)
         free(key);
 }
 
-ed25519_key *crypto_ed25519_generate() {
-    ed25519_key *key = crypto_ed25519_new();
+int crypto_ed25519_generate(ed25519_key *key) {
+    int r;
+    r = crypto_ed25519_init(key);
+    if (r)
+        return r;
 
     WC_RNG rng;
-    int r = wc_ed25519_make_key(&rng, ED25519_KEY_SIZE, key);
+    r = wc_ed25519_make_key(&rng, ED25519_KEY_SIZE, key);
     if (r) {
         DEBUG("Failed to generate key (code %d)", r);
-        crypto_ed25519_free(key);
-        return NULL;
+        return r;
     }
 
-    return key;
+    return 0;
 }
 
 int crypto_ed25519_import_key(ed25519_key *key, const byte *data, size_t size) {
@@ -442,39 +454,38 @@ int crypto_ed25519_verify(
 }
 
 
-curve25519_key *crypto_curve25519_new() {
-    curve25519_key *key = malloc(sizeof(curve25519_key));
+int crypto_curve25519_init(curve25519_key *key) {
     int r = wc_curve25519_init(key);
     if (r) {
-        free(key);
-        return NULL;
+        return r;
     }
-    return key;
+    return 0;
 }
 
 
-void crypto_curve25519_free(curve25519_key *key) {
+void crypto_curve25519_done(curve25519_key *key) {
     if (!key)
         return;
 
     wc_curve25519_free(key);
-    free(key);
 }
 
 
-curve25519_key *crypto_curve25519_generate() {
-    curve25519_key *key = crypto_curve25519_new();
-    if (!key)
-        return NULL;
-
-    WC_RNG rng;
-    int r = wc_curve25519_make_key(&rng, 32, key);
+int crypto_curve25519_generate(curve25519_key *key) {
+    int r;
+    r = crypto_curve25519_init(key);
     if (r) {
-        crypto_curve25519_free(key);
-        return NULL;
+        return r;
     }
 
-    return key;
+    WC_RNG rng;
+    r = wc_curve25519_make_key(&rng, 32, key);
+    if (r) {
+        crypto_curve25519_done(key);
+        return -1;
+    }
+
+    return 0;
 }
 
 

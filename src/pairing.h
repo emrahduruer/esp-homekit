@@ -1,6 +1,7 @@
 #ifndef __PAIRING_H__
 #define __PAIRING_H__
 
+#include "constants.h"
 #include "crypto.h"
 
 typedef enum {
@@ -9,12 +10,9 @@ typedef enum {
 
 typedef struct {
     int id;
-    char *device_id;
-    ed25519_key *device_key;
+    char device_id[DEVICE_ID_SIZE + 1];
+    ed25519_key device_key;
     pairing_permissions_t permissions;
 } pairing_t;
-
-pairing_t *pairing_new();
-void pairing_free(pairing_t *pairing);
 
 #endif // __PAIRING_H__

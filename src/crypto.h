@@ -3,6 +3,9 @@
 
 #include <stdlib.h>
 
+#include <wolfssl/wolfcrypt/ed25519.h>
+#include <wolfssl/wolfcrypt/curve25519.h>
+
 typedef unsigned char byte;
 
 #define HKDF_HASH_SIZE 32  // CHACHA20_POLY1305_AEAD_KEYSIZE
@@ -54,11 +57,9 @@ int crypto_chacha20poly1305_decrypt(
 );
 
 // ED25519
-struct _ed25519_key;
-typedef struct _ed25519_key ed25519_key;
-
+int crypto_ed25519_init(ed25519_key *key);
 ed25519_key *crypto_ed25519_new();
-ed25519_key *crypto_ed25519_generate();
+int crypto_ed25519_generate(ed25519_key *key);
 void crypto_ed25519_free(ed25519_key *key);
 
 int crypto_ed25519_import_key(
@@ -92,12 +93,9 @@ int crypto_ed25519_verify(
 
 
 // CURVE25519
-struct _curve25519_key;
-typedef struct _curve25519_key curve25519_key;
-
-curve25519_key *crypto_curve25519_new();
-curve25519_key *crypto_curve25519_generate();
-void crypto_curve25519_free(curve25519_key *key);
+int crypto_curve25519_init(curve25519_key *key);
+int crypto_curve25519_done(curve25519_key *key);
+int crypto_curve25519_generate(curve25519_key *key);
 int crypto_curve25519_import_public(
     curve25519_key *key,
     const byte *data, size_t size
